@@ -4,24 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Streaming Sport</title>
-    
     <script src="https://projection-2025.netlify.app/playerjs.js"></script>
 
     <style>
         :root { --primary: #e50914; --bg: #141414; --card-bg: #1f1f1f; --text: #fff; }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         
-        /* Navigation */
-        nav { background: #000; padding: 15px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: center; gap: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .nav-btn { background: none; border: none; color: #aaa; padding: 10px 20px; cursor: pointer; font-size: 1rem; font-weight: bold; text-transform: uppercase; border-bottom: 3px solid transparent; transition: 0.3s; }
+        nav { background: #000; padding: 15px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: center; gap: 15px; }
+        .nav-btn { background: none; border: none; color: #aaa; padding: 10px 20px; cursor: pointer; font-size: 1rem; font-weight: bold; border-bottom: 3px solid transparent; }
         .nav-btn.active { color: white; border-bottom: 3px solid var(--primary); }
         
-        /* Conteneur */
         .container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
-        .section-header { margin-bottom: 20px; border-left: 5px solid var(--primary); padding-left: 15px; }
         .match-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
         
-        /* Cartes */
         .card { background: var(--card-bg); border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform 0.2s; position: relative; }
         .card:hover { transform: translateY(-5px); }
         .card-img-container { width: 100%; height: 170px; position: relative; }
@@ -31,49 +26,32 @@
         .card-title { margin: 0 0 10px 0; font-size: 1.1rem; }
         .card-info { color: #aaa; font-size: 0.9rem; display: flex; justify-content: space-between; }
 
-        /* MODAL PLEIN ECRAN */
+        /* PLAYER PLEIN ECRAN */
         #player-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; z-index: 9999; flex-direction: column; }
         #player-wrapper { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
         #player { width: 100% !important; height: 100% !important; }
-        
-        /* Bouton fermer */
-        .close-btn { position: absolute; top: 20px; right: 20px; color: white; background: rgba(0,0,0,0.5); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10000; border: 1px solid rgba(255,255,255,0.3); font-size: 24px; transition: 0.2s; }
-        .close-btn:hover { background: red; transform: scale(1.1); }
-        
-        /* Titre Overlay */
-        .player-title-overlay { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.6); color: white; padding: 8px 15px; border-radius: 4px; z-index: 10000; pointer-events: none; }
+        .close-btn { position: absolute; top: 20px; right: 20px; color: white; background: rgba(0,0,0,0.5); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10000; border: 1px solid rgba(255,255,255,0.3); font-size: 24px; }
         
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
         
-        /* Message erreur si fichier non trouvé */
-        #error-msg { color: #ff6b6b; text-align: center; margin-top: 50px; display: none; background: rgba(255,0,0,0.1); padding: 20px; border-radius: 8px; }
+        /* Message d'erreur */
+        #debug-msg { color: #ff6b6b; text-align: center; margin-top: 20px; background: rgba(255,0,0,0.1); padding: 10px; display: none; }
     </style>
 </head>
 <body>
 
     <nav>
-        <button class="nav-btn active" onclick="switchTab('home')">Accueil (À venir)</button>
+        <button class="nav-btn active" onclick="switchTab('home')">Accueil</button>
         <button class="nav-btn" onclick="switchTab('live')">🔴 Direct</button>
     </nav>
 
     <div class="container">
-        <h2 id="section-title" class="section-header">Chargement...</h2>
-        
-        <div id="match-list" class="match-grid"></div>
-
-        <div id="no-match" style="display:none; text-align:center; color:#666; margin-top:50px;">
-            Aucun match disponible.
-        </div>
-        
-        <div id="error-msg">
-            Impossible de charger "match.json". <br>
-            Si tu testes en local (double-clic), cela ne marchera pas.<br>
-            Le code doit être en ligne (GitHub Pages) pour fonctionner sans serveur.
-        </div>
+        <h2 id="section-title" style="border-left: 5px solid red; padding-left: 10px;">Chargement...</h2>
+        <div id="debug-msg"></div> <div id="match-list" class="match-grid"></div>
+        <div id="no-match" style="display:none; text-align:center; color:#666; margin-top:50px;">Aucun match.</div>
     </div>
 
     <div id="player-modal">
-        <div class="player-title-overlay"><h3 id="player-text" style="margin:0">Titre</h3></div>
         <div class="close-btn" onclick="closePlayer()">✕</div>
         <div id="player-wrapper"><div id="player"></div></div>
     </div>
@@ -82,63 +60,65 @@
         let allMatches = [];
         let playerInstance = null;
 
-        // --- CHARGEMENT DU JSON ---
+        // --- CHARGEMENT SIMPLE ---
         async function init() {
+            const debugEl = document.getElementById('debug-msg');
             try {
-                // Cette commande cherche le fichier DANS LE MEME DOSSIER
+                // On charge simplement le fichier local match.json
                 const response = await fetch('match.json');
                 
-                if (!response.ok) throw new Error("Fichier non trouvé (404)");
-                
+                // Si le fichier n'existe pas
+                if (!response.ok) {
+                    throw new Error(`Fichier match.json introuvable (Code: ${response.status})`);
+                }
+
+                // Essai de lecture du JSON
                 allMatches = await response.json();
-                renderMatches('home');
                 
+                // Si ça marche :
+                renderMatches('home');
+
             } catch (error) {
-                console.error("Erreur:", error);
-                document.getElementById('match-list').innerHTML = "";
-                document.getElementById('error-msg').style.display = 'block';
-                document.getElementById('section-title').textContent = "Erreur";
+                // Si ça plante, on affiche POURQUOI
+                console.error(error);
+                debugEl.style.display = 'block';
+                debugEl.innerHTML = `<strong>Erreur :</strong> ${error.message} <br> 
+                <em>Vérifie que ton fichier match.json ne contient pas de virgule à la fin du dernier élément.</em>`;
             }
         }
 
-        // --- FILTRAGE ---
         function renderMatches(tab) {
             const container = document.getElementById('match-list');
             const noMatchDiv = document.getElementById('no-match');
             const titleEl = document.getElementById('section-title');
             
             container.innerHTML = '';
-            
             const now = new Date();
             let matchesToShow = [];
 
             if (tab === 'live') {
-                titleEl.textContent = "En Direct & Commence Bientôt";
+                titleEl.textContent = "En Direct";
                 matchesToShow = allMatches.filter(match => {
                     const start = new Date(`${match.date}T${match.heure}`);
-                    const end = new Date(start.getTime() + (2.5 * 3600 * 1000)); // +2h30 durée estimée
-                    const soon = new Date(start.getTime() - (3600 * 1000)); // Début - 1h
-                    // Est LIVE si : Maintenant est entre (Début-1h) et (Fin)
+                    const end = new Date(start.getTime() + (2.5 * 3600 * 1000));
+                    const soon = new Date(start.getTime() - (3600 * 1000));
                     return (now >= soon && now < end);
                 });
             } else {
                 titleEl.textContent = "Prochains Matchs";
                 matchesToShow = allMatches.filter(match => {
                     const start = new Date(`${match.date}T${match.heure}`);
-                    // Est futur si : Le début est après maintenant
                     return start > now;
                 });
             }
 
-            if (matchesToShow.length === 0) {
-                noMatchDiv.style.display = 'block';
-            } else {
+            if (matchesToShow.length === 0) noMatchDiv.style.display = 'block';
+            else {
                 noMatchDiv.style.display = 'none';
                 matchesToShow.forEach(m => container.appendChild(createCard(m, tab==='live')));
             }
         }
 
-        // --- HTML CARTE ---
         function createCard(match, isLive) {
             const div = document.createElement('div');
             div.className = 'card';
@@ -146,35 +126,26 @@
             div.innerHTML = `
                 <div class="card-img-container">
                     ${badge}
-                    <img src="${match.url_poster}" class="card-img" onerror="this.src='https://via.placeholder.com/300?text=Sport'">
+                    <img src="${match.url_poster}" class="card-img" onerror="this.src='https://via.placeholder.com/300'">
                 </div>
                 <div class="card-body">
                     <h3 class="card-title">${match.titre}</h3>
-                    <div class="card-info">
-                        <span>${formatDate(match.date)}</span>
-                        <span>${match.heure}</span>
-                    </div>
+                    <div class="card-info"><span>${match.date}</span><span>${match.heure}</span></div>
                 </div>`;
             div.onclick = () => openPlayer(match);
             return div;
         }
 
-        // --- PLAYER LOGIC ---
         function openPlayer(match) {
-            const modal = document.getElementById('player-modal');
-            document.getElementById('player-text').textContent = match.titre;
-            modal.style.display = 'flex';
-
+            document.getElementById('player-modal').style.display = 'flex';
             if (window.Playerjs) {
                 if(playerInstance) document.getElementById('player').innerHTML = "";
-                
                 playerInstance = new Playerjs({
                     id: "player",
                     file: match.lien_m3u8,
                     poster: match.url_poster,
                     autoplay: true,
-                    width: "100%", 
-                    height: "100%"
+                    width: "100%", height: "100%"
                 });
             }
         }
@@ -192,12 +163,6 @@
             renderMatches(t);
         }
 
-        function formatDate(d) {
-            const p = d.split('-');
-            return `${p[2]}/${p[1]}/${p[0]}`;
-        }
-
-        // Démarrage
         init();
     </script>
 </body>
