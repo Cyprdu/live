@@ -1,0 +1,16 @@
+[
+  {
+    "titre": "Monaco vs Lyon",
+    "url_poster": "https://www.ferveurlyonnaise.fr/wp-content/uploads/2025/05/AS-Monaco-OL.png",
+    "lien_m3u8": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+    "date": "2025-05-10",
+    "heure": "21:00"
+  },
+  {
+    "titre": "PSG vs Marseille",
+    "url_poster": "https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png",
+    "lien_m3u8": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+    "date": "2025-01-01",
+    "heure": "20:45"
+  }
+]
