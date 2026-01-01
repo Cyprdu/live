@@ -3,99 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Sports Player</title>
+    <title>Live Sport Streaming</title>
     
     <script src="https://projection-2025.netlify.app/playerjs.js"></script>
 
     <style>
         :root {
-            --primary: #e50914; /* Rouge type Netflix/Sport */
+            --primary: #e50914; /* Rouge Sport */
             --bg: #141414;
             --card-bg: #1f1f1f;
             --text: #ffffff;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
             padding: 0;
+            overflow-x: hidden;
         }
 
-        /* Navigation */
+        /* --- NAVIGATION --- */
         nav {
             background-color: #000;
-            padding: 1rem;
+            padding: 15px;
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
             display: flex;
-            gap: 20px;
             justify-content: center;
+            gap: 15px;
         }
 
         .nav-btn {
             background: transparent;
-            border: 2px solid transparent;
+            border: none;
             color: #aaa;
             padding: 10px 20px;
             cursor: pointer;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
+            text-transform: uppercase;
             transition: 0.3s;
-            border-radius: 5px;
+            border-bottom: 3px solid transparent;
         }
 
         .nav-btn.active {
             color: white;
-            background-color: var(--primary);
+            border-bottom: 3px solid var(--primary);
         }
 
         .nav-btn:hover:not(.active) {
             color: white;
-            background-color: rgba(255,255,255,0.1);
         }
 
-        /* Conteneur des matchs */
+        /* --- CONTENU --- */
         .container {
-            max-width: 1200px;
-            margin: 20px auto;
+            max-width: 1400px;
+            margin: 30px auto;
             padding: 0 20px;
+        }
+
+        .section-header {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            border-left: 5px solid var(--primary);
+            padding-left: 15px;
         }
 
         .match-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
         }
 
-        .section-title {
-            margin-top: 30px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 10px;
-        }
-
-        /* Carte de match */
+        /* --- CARTE MATCH --- */
         .card {
             background-color: var(--card-bg);
             border-radius: 8px;
             overflow: hidden;
-            transition: transform 0.2s;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
             cursor: pointer;
             position: relative;
         }
 
         .card:hover {
-            transform: scale(1.03);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+            z-index: 2;
         }
 
         .card-img-container {
             width: 100%;
-            height: 160px;
-            overflow: hidden;
+            height: 170px;
             position: relative;
         }
 
@@ -105,17 +108,19 @@
             object-fit: cover;
         }
 
+        /* Badge LIVE */
         .live-badge {
             position: absolute;
             top: 10px;
             right: 10px;
-            background-color: red;
+            background-color: #ff0000;
             color: white;
-            padding: 4px 8px;
+            padding: 5px 10px;
             border-radius: 4px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: bold;
-            animation: pulse 2s infinite;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            animation: pulse 1.5s infinite;
         }
 
         .card-body {
@@ -123,56 +128,105 @@
         }
 
         .card-title {
-            margin: 0 0 10px 0;
+            margin: 0 0 8px 0;
             font-size: 1.1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .card-info {
-            color: #ccc;
+            color: #b3b3b3;
             font-size: 0.9rem;
             display: flex;
-            align-items: center;
-            gap: 10px;
+            justify-content: space-between;
         }
 
-        /* Modal Player */
+        /* --- LECTEUR PLEIN ÉCRAN (MODAL) --- */
         #player-modal {
-            display: none;
+            display: none; /* Caché par défaut */
             position: fixed;
             top: 0;
             left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Conteneur vidéo prenant 100% de l'écran */
+        #player-wrapper {
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.95);
-            z-index: 1000;
-            justify-content: center;
+            display: flex;
             align-items: center;
-            flex-direction: column;
+            justify-content: center;
         }
 
-        #player-container {
-            width: 80%;
-            max-width: 900px;
-            aspect-ratio: 16/9;
-            background: #000;
+        /* Style spécifique pour forcer le player JS à prendre toute la place */
+        #player {
+            width: 100% !important;
+            height: 100% !important;
         }
 
+        /* Bouton fermeture */
         .close-btn {
             position: absolute;
-            top: 20px;
-            right: 30px;
-            color: white;
-            font-size: 3rem;
+            top: 25px;
+            right: 35px;
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(0, 0, 0, 0.5);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
             cursor: pointer;
-            z-index: 1001;
+            z-index: 10000;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.2s;
         }
 
-        .hidden { display: none; }
+        .close-btn:hover {
+            background-color: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* Titre en surimpression */
+        .player-overlay-info {
+            position: absolute;
+            top: 25px;
+            left: 35px;
+            z-index: 10000;
+            pointer-events: none;
+        }
+
+        .player-overlay-info h2 {
+            margin: 0;
+            background-color: rgba(0,0,0,0.6);
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-size: 1.2rem;
+            color: white;
+        }
 
         @keyframes pulse {
             0% { opacity: 1; }
-            50% { opacity: 0.5; }
+            50% { opacity: 0.6; }
             100% { opacity: 1; }
+        }
+
+        #error-msg {
+            color: #ff6b6b;
+            text-align: center;
+            margin-top: 50px;
+            display: none;
         }
     </style>
 </head>
@@ -180,161 +234,181 @@
 
     <nav>
         <button class="nav-btn active" onclick="switchTab('home')">Accueil (À venir)</button>
-        <button class="nav-btn" onclick="switchTab('live')">🔴 Matchs en direct</button>
+        <button class="nav-btn" onclick="switchTab('live')">🔴 Direct</button>
     </nav>
 
     <div class="container">
-        <h2 id="page-title" class="section-title">Prochains Matchs</h2>
+        <h2 id="section-title" class="section-header">Prochains Matchs</h2>
+        
         <div id="match-list" class="match-grid">
             </div>
-        <p id="no-match-msg" style="display:none; text-align:center; color:#666; margin-top:50px;">Aucun match disponible pour le moment.</p>
+
+        <div id="no-match" style="display:none; text-align:center; color:#666; margin-top:50px;">
+            <h3>Aucun match dans cette catégorie pour le moment.</h3>
+        </div>
+        
+        <div id="error-msg">
+            Attention : Pour charger le fichier match.json, vous devez utiliser un serveur local (Live Server sur VSCode ou XAMPP/WAMP), pas juste ouvrir le fichier.
+        </div>
     </div>
 
     <div id="player-modal">
-        <span class="close-btn" onclick="closePlayer()">&times;</span>
-        <div id="player-container">
+        <div class="player-overlay-info">
+            <h2 id="player-title-text">Titre du match</h2>
+        </div>
+        <div class="close-btn" onclick="closePlayer()">✕</div>
+        
+        <div id="player-wrapper">
             <div id="player"></div>
         </div>
-        <h3 id="player-title" style="margin-top: 15px;"></h3>
     </div>
 
     <script>
+        // Variables globales
         let allMatches = [];
         let playerInstance = null;
 
-        // Fonction principale de chargement
-        async function loadMatches() {
+        // --- 1. CHARGEMENT DES DONNÉES ---
+        async function init() {
             try {
                 const response = await fetch('match.json');
+                if (!response.ok) throw new Error("HTTP error " + response.status);
                 allMatches = await response.json();
-                
-                // Par défaut, charger l'accueil
-                renderMatches('home');
+                renderMatches('home'); // Charger l'accueil par défaut
             } catch (error) {
-                console.error("Erreur chargement JSON:", error);
-                document.getElementById('match-list').innerHTML = "<p>Erreur: Impossible de charger les matchs. Vérifiez que vous lancez ce fichier via un serveur local (http://) et non directement (file://).</p>";
+                console.error("Erreur de chargement:", error);
+                document.getElementById('error-msg').style.display = 'block';
             }
         }
 
-        // Fonction pour afficher les matchs selon le filtre
-        function renderMatches(filterType) {
+        // --- 2. LOGIQUE DE FILTRAGE ---
+        function renderMatches(tab) {
             const container = document.getElementById('match-list');
-            const noMatchMsg = document.getElementById('no-match-msg');
-            container.innerHTML = '';
+            const noMatchDiv = document.getElementById('no-match');
+            const titleElement = document.getElementById('section-title');
+            
+            container.innerHTML = ''; // Vider la liste
             
             const now = new Date();
             let matchesToShow = [];
 
-            // Logique de filtrage
-            matchesToShow = allMatches.filter(match => {
-                const matchDate = new Date(`${match.date}T${match.heure}`);
-                // On estime qu'un match dure 2 heures
-                const matchEndTime = new Date(matchDate.getTime() + (2 * 60 * 60 * 1000)); 
-                // Moins d'une heure avant le début
-                const oneHourBefore = new Date(matchDate.getTime() - (60 * 60 * 1000));
+            if (tab === 'live') {
+                titleElement.textContent = "Matchs en Direct & Commence Bientôt";
+                matchesToShow = allMatches.filter(match => {
+                    const matchStart = new Date(`${match.date}T${match.heure}`);
+                    // On considère qu'un match dure 2h30 max
+                    const matchEnd = new Date(matchStart.getTime() + (2.5 * 60 * 60 * 1000));
+                    // Commence dans moins d'1 heure
+                    const startsSoon = new Date(matchStart.getTime() - (60 * 60 * 1000));
 
-                if (filterType === 'live') {
-                    // Logique "En direct":
-                    // Soit le match est en cours (Maintenant est entre début et fin)
-                    // Soit il commence dans moins d'une heure (Maintenant est après [Début - 1h] et avant Début)
-                    const isLive = (now >= matchDate && now < matchEndTime);
-                    const isStartingSoon = (now >= oneHourBefore && now < matchDate);
-                    return isLive || isStartingSoon;
-                } else {
-                    // Logique "Accueil" (Futurs qui ne sont pas encore commencés ou pas dans le filtre live)
-                    // On affiche tout ce qui est dans le futur strict
-                    return matchDate > now;
-                }
-            });
-
-            // Mise à jour de l'interface
-            if (matchesToShow.length === 0) {
-                noMatchMsg.style.display = 'block';
+                    // Logique : C'est LIVE si : (On est après le 'Bientôt' ET avant la fin)
+                    return now >= startsSoon && now < matchEnd;
+                });
             } else {
-                noMatchMsg.style.display = 'none';
-                matchesToShow.forEach(match => {
-                    const card = createMatchCard(match, filterType === 'live');
-                    container.appendChild(card);
+                titleElement.textContent = "Prochains Matchs";
+                matchesToShow = allMatches.filter(match => {
+                    const matchStart = new Date(`${match.date}T${match.heure}`);
+                    // Affiche seulement les matchs futurs (qui n'ont pas encore commencé)
+                    return matchStart > now;
                 });
             }
 
-            // Mise à jour du titre
-            document.getElementById('page-title').textContent = filterType === 'live' ? 'En Direct / Commence bientôt' : 'Prochains Matchs';
+            // Affichage
+            if (matchesToShow.length === 0) {
+                noMatchDiv.style.display = 'block';
+            } else {
+                noMatchDiv.style.display = 'none';
+                matchesToShow.forEach(match => {
+                    container.appendChild(createCard(match, tab === 'live'));
+                });
+            }
         }
 
-        // Création du HTML pour une carte
-        function createMatchCard(match, isLiveContext) {
+        // --- 3. CRÉATION DU HTML DES CARTES ---
+        function createCard(match, isLiveTab) {
             const div = document.createElement('div');
             div.className = 'card';
-            
-            // Si c'est le contexte live, on peut ajouter un badge
-            const badge = isLiveContext ? '<span class="live-badge">LIVE / Bientôt</span>' : '';
+
+            const badgeHTML = isLiveTab ? '<div class="live-badge">LIVE</div>' : '';
 
             div.innerHTML = `
                 <div class="card-img-container">
-                    ${badge}
-                    <img src="${match.url_poster}" alt="${match.titre}" class="card-img" onerror="this.src='https://via.placeholder.com/300x160?text=Sport'">
+                    ${badgeHTML}
+                    <img src="${match.url_poster}" class="card-img" alt="${match.titre}" onerror="this.src='https://via.placeholder.com/300x170?text=No+Image'">
                 </div>
                 <div class="card-body">
                     <h3 class="card-title">${match.titre}</h3>
                     <div class="card-info">
-                        <span>📅 ${match.date}</span>
-                        <span>⏰ ${match.heure}</span>
+                        <span>${formatDate(match.date)}</span>
+                        <span>${match.heure}</span>
                     </div>
                 </div>
             `;
 
-            // Clic pour ouvrir le player
-            div.onclick = () => openPlayer(match.lien_m3u8, match.titre, match.url_poster);
+            div.onclick = () => openFullScreenPlayer(match);
             return div;
         }
 
-        // Gestion des onglets
-        function switchTab(tab) {
-            // Gestion des classes CSS actives
-            const buttons = document.querySelectorAll('.nav-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            
-            if (tab === 'home') buttons[0].classList.add('active');
-            else buttons[1].classList.add('active');
-
-            renderMatches(tab);
-        }
-
-        // --- GESTION DU PLAYER ---
-
-        function openPlayer(url, title, poster) {
+        // --- 4. GESTION DU PLAYER PLEIN ÉCRAN ---
+        function openFullScreenPlayer(match) {
             const modal = document.getElementById('player-modal');
-            const titleEl = document.getElementById('player-title');
-            
-            modal.style.display = 'flex';
-            titleEl.textContent = title;
+            const titleTxt = document.getElementById('player-title-text');
 
-            // Initialisation de PlayerJS avec l'URL fournie
+            // Mise à jour UI
+            titleTxt.textContent = match.titre;
+            modal.style.display = 'flex'; // Affiche le modal
+
+            // Initialisation de PlayerJS
             if (window.Playerjs) {
+                // Nettoyage préventif
+                if (playerInstance) {
+                    try { document.getElementById('player').innerHTML = ""; } catch(e){}
+                }
+
+                // Création du lecteur
                 playerInstance = new Playerjs({
                     id: "player",
-                    file: url,
-                    poster: poster,
-                    autoplay: true
+                    file: match.lien_m3u8,
+                    poster: match.url_poster,
+                    autoplay: true,
+                    // Paramètres pour le plein écran CSS
+                    width: "100%",
+                    height: "100%"
                 });
             } else {
-                alert("Erreur: Le script PlayerJS n'est pas chargé.");
+                alert("Erreur: Le script PlayerJS n'est pas chargé correctement.");
             }
         }
 
         function closePlayer() {
             const modal = document.getElementById('player-modal');
             modal.style.display = 'none';
-            
-            // Arrêter proprement le player (vider le conteneur)
+
+            // Destruction du contenu du player pour arrêter le son/vidéo
             document.getElementById('player').innerHTML = "";
             playerInstance = null;
         }
 
-        // Démarrage
-        loadMatches();
+        // --- UTILITAIRES ---
+        function switchTab(tabName) {
+            // Gestion boutons actifs
+            const btns = document.querySelectorAll('.nav-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            
+            if(tabName === 'home') btns[0].classList.add('active');
+            else btns[1].classList.add('active');
 
+            renderMatches(tabName);
+        }
+
+        function formatDate(dateStr) {
+            // Transforme 2025-05-20 en 20/05/2025
+            const parts = dateStr.split('-');
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        // Lancer l'app
+        init();
     </script>
 </body>
 </html>
